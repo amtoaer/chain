@@ -56,18 +56,19 @@ class BlockChain(object):
 
     def search_transaction(self, hospital: str, department: str, doctor: str, patient: str) -> str:
         '''
-        通过医院、科室、医生和病人定位某个交易并得到该次交易摘要（倒序遍历查询）
+        通过医院、科室、医生和病人定位某个交易并得到该次交易摘要（遍历查询）
         '''
-        # 遍历缓存区
-        for transaction in list(reversed(self.transactions)):
-            if transaction['hospital'] == hospital and transaction['department'] == department and transaction['doctor'] == doctor and transaction['patient'] == patient:
-                return transaction['summary']
+        result: str = 'null'
         # 遍历区块
-        for block in list(reversed(self.blocks)):
-            for transaction in list(reversed(block.transactions)):
+        for block in self.blocks:
+            for transaction in block["transactions"]:
                 if transaction['hospital'] == hospital and transaction['department'] == department and transaction['doctor'] == doctor and transaction['patient'] == patient:
-                    return transaction['summary']
-        return "null"
+                    result = transaction['summary']
+        # 遍历缓存区
+        for transaction in self.transactions:
+            if transaction['hospital'] == hospital and transaction['department'] == department and transaction['doctor'] == doctor and transaction['patient'] == patient:
+                result = transaction['summary']
+        return result
 
     def get_transaction(self, indexs) -> str:
         '''
