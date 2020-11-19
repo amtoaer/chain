@@ -13,9 +13,9 @@ class BlockChain(object):
         # 当前拥有的交易
         self.transactions = []
         # 加入创世区块
-        self.append_new_block("100")
+        self.__append_new_block("100")
 
-    def append_new_block(self, previous_hash: str = ''):
+    def __append_new_block(self, previous_hash: str = ''):
         '''
         将当前所有交易打包成区块
         '''
@@ -23,15 +23,26 @@ class BlockChain(object):
             'index': len(self.blocks)+1,
             'timestamp': time(),
             'transactions': self.transactions,
-            'previous_hash': previous_hash if previous_hash != '' else Utils.hash(self.blocks[-1])
+            'previous_hash': previous_hash if previous_hash != '' else Utils.hash_object(self.blocks[-1])
         })
         # 清空当前交易
         self.transactions.clear()
 
-    def append_new_transaction(self, hospital: str, department: str, doctor: str, patient: str, summary: str):
+    def append_new_transaction(self, hospital: str, department: str, doctor: str, patient: str, content: str) -> tuple:
         '''
         加入交易，内容分别为（医院，科室，医生，病人，病历摘要）
         '''
+        # 每满十笔交易打包一个区块
+        if len(self.transactions) == 10:
+            self.__append_new_block()
+
+        # 对病历内容进行hash得到摘要
+        summary = Utils.hash_str(content)
+
+        # 获取交易插入位置
+        pos = (len(self.blocks), len(self.transactions))
+
+        # 插入交易
         self.transactions.append({
             'hospital': hospital,
             'department': department,
@@ -40,18 +51,39 @@ class BlockChain(object):
             'summary': summary,
         })
 
-    def search_transaction(self, hospital: str, department: str, doctor: str, patient: str):
-        '''
-        通过医院、科室、医生和病人定位某个交易并得到该次交易摘要（遍历查询）
-        '''
-        for block in self.blocks:
-            for transaction in block.transactions:
-                if transaction.hospital == hospital and transaction.department == department and transaction.doctor == doctor and transaction.patient == patient:
-                    return transaction.summary
+        # 返回插入位置
+        return pos
 
-    def get_transaction(self, indexs: tuple):
+    def search_transaction(self, hospital: str, department: str, doctor: str, patient: str) -> str:
+        '''
+        通过医院、科室、医生和病人定位某个交易并得到该次交易摘要（倒序遍历查询）
+        '''
+        # 遍历缓存区
+        for transaction in list(reversed(self.transactions)):
+            if transaction['hospital'] == hospital and transaction['department'] == department and transaction['doctor'] == doctor and transaction['patient'] == patient:
+                return transaction['summary']
+        # 遍历区块
+        for block in list(reversed(self.blocks)):
+            for transaction in list(reversed(block.transactions)):
+                if transaction['hospital'] == hospital and transaction['department'] == department and transaction['doctor'] == doctor and transaction['patient'] == patient:
+                    return transaction['summary']
+        return "null"
+
+    def get_transaction(self, indexs) -> str:
         '''
         通过某个坐标得到该位置的交易摘要（坐标从索引树中给出）
         '''
+        if indexs == {}:
+            return "null"
         block_index, transaction_index = indexs
-        return self.block[block_index].transaction[transaction_index].summary
+        # 如果还未打包成区块，则直接从缓存区中取
+        if block_index == len(self.blocks):
+            return self.transactions[transaction_index]['summary']
+        # 否则在区块中取
+        return self.block[block_index].transaction[transaction_index]['summary']
+
+    def get_latest_transaction(self):
+        '''
+        返回最新的交易，用于json返回
+        '''
+        return self.transactions[-1]
