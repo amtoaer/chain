@@ -1,4 +1,9 @@
-from web.api import app
+from test.test import Test
 
-if __name__ == '__main__':
-    app.run(host='localhost', port=8080)
+test = Test()
+
+# 测试性能
+test.test()
+
+# 绘制图片
+test.paint()
