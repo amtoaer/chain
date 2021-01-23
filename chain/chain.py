@@ -58,7 +58,7 @@ class BlockChain(object):
         '''
         通过医院、科室、医生和病人定位某个交易并得到该次交易摘要（遍历查询）
         '''
-        result: str = 'null'
+        result: str = None
         # 遍历区块
         for block in self.blocks:
             for transaction in block["transactions"]:
@@ -75,16 +75,10 @@ class BlockChain(object):
         通过某个坐标得到该位置的交易摘要（坐标从索引树中给出）
         '''
         if indexs == {}:
-            return "null"
+            return None
         block_index, transaction_index = indexs
         # 如果还未打包成区块，则直接从缓存区中取
         if block_index == len(self.blocks):
             return self.transactions[transaction_index]['summary']
         # 否则在区块中取
-        return self.block[block_index].transaction[transaction_index]['summary']
-
-    def get_latest_transaction(self):
-        '''
-        返回最新的交易，用于json返回
-        '''
-        return self.transactions[-1]
+        return self.blocks[block_index]['transactions'][transaction_index]['summary']
